@@ -3,18 +3,8 @@ version: '3.8'
 x-airflow-common:
   &airflow-common
   image: apache/airflow:2.7.0-python3.9
-  environment: &airflow-common-env
-    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
-    AIRFLOW__CORE__FERNET_KEY: ''
-    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
-    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
-    AIRFLOW__WEBSERVER__RBAC: 'true'
-    _PIP_ADDITIONAL_REQUIREMENTS: pandas numpy scikit-learn requests psycopg2-binary
+  env_file:
+    - .env
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
@@ -31,10 +21,8 @@ x-airflow-common:
 services:
   postgres:
     image: postgres:13
-    environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
+    env_file:
+      - .env
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
     healthcheck:
@@ -103,7 +91,6 @@ services:
       timeout: 10s
       retries: 5
     environment:
-      <<: *airflow-common-env
       DUMB_INIT_SETSID: "0"
     restart: always
     depends_on:
@@ -195,7 +182,6 @@ services:
         chown -R "$${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
         exec /entrypoint airflow version
     environment:
-      <<: *airflow-common-env
       _AIRFLOW_DB_UPGRADE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: admin

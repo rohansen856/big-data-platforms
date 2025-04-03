@@ -7,10 +7,8 @@ services:
     ports:
       - "8123:8123"
       - "9000:9000"
-    environment:
-      CLICKHOUSE_DB: analytics
-      CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWORD: ""
+    env_file:
+      - .env
     volumes:
       - clickhouse-data:/var/lib/clickhouse
       - ./scripts:/docker-entrypoint-initdb.d
@@ -29,10 +27,8 @@ services:
       - "8080:80"
     depends_on:
       - clickhouse
-    environment:
-      CH_NAME: clickhouse
-      CH_HOST: clickhouse
-      CH_PORT: 8123
+    env_file:
+      - .env
     networks:
       - clickhouse-network
 
@@ -45,9 +41,8 @@ services:
       - clickhouse
     volumes:
       - ./app:/app
-    environment:
-      CLICKHOUSE_HOST: clickhouse
-      CLICKHOUSE_PORT: 8123
+    env_file:
+      - .env
     command: python /app/data_generator.py
     networks:
       - clickhouse-network
