@@ -1,0 +1,66 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+.env
+*.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Logs
+*.log
+*.out
+*.err
+
+# Docker
+*.pid
+*.tar
+docker-compose.override.yml
+
+# Airflow
+airflow/logs/
+airflow/dags/__pycache__/
+
+# Spark
+spark/data/
+spark/checkpoints/
+
+# Kafka
+kafka/connectors/
+
+# ClickHouse
+clickhouse-data/
+
+# Cassandra
+cassandra/data/
+
+# Hive
+hive/data/
+
+# NiFi
+nifi/data/
+
+# Shared Data
+shared-data/
+
+# System Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Git
+*.orig
