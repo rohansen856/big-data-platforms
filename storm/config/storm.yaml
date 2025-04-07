@@ -1,0 +1,51 @@
+########### These MUST be filled in for a storm configuration
+storm.zookeeper.servers:
+  - "zookeeper"
+
+storm.zookeeper.port: 2181
+
+nimbus.seeds: ["nimbus"]
+
+########### These may optionally be filled in:
+
+# Ports to use for receiving messages
+nimbus.thrift.port: 6627
+drpc.port: 3772
+drpc.invocations.port: 3773
+drpc.http.port: 3774
+
+# UI port
+ui.port: 8080
+
+# Supervisor ports
+supervisor.slots.ports:
+  - 6700
+  - 6701
+  - 6702
+  - 6703
+
+# Storm local directory
+storm.local.dir: "/opt/storm/data"
+
+# Log directory
+storm.log.dir: "/opt/storm/logs"
+
+# Worker configuration
+worker.childopts: "-Xmx1024m"
+supervisor.childopts: "-Xmx256m"
+nimbus.childopts: "-Xmx1024m"
+ui.childopts: "-Xmx768m"
+
+# Topology configuration
+topology.message.timeout.secs: 30
+topology.debug: false
+topology.workers: 1
+topology.acker.executors: 1
+topology.max.spout.pending: 1000
+
+# Serialization
+topology.fall.back.on.java.serialization: true
+topology.skip.missing.kryo.registrations: true
+
+# Metrics
+topology.builtin.metrics.bucket.size.secs: 60
