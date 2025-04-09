@@ -28,10 +28,7 @@ RUN wget https://archive.apache.org/dist/hive/hive-${HIVE_VERSION}/apache-hive-$
     && rm apache-hive-${HIVE_VERSION}-bin.tar.gz
 
 # Install MySQL connector for Hive metastore
-RUN wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.33.tar.gz \
-    && tar -xzf mysql-connector-java-8.0.33.tar.gz \
-    && cp mysql-connector-java-8.0.33/mysql-connector-java-8.0.33.jar ${HIVE_HOME}/lib/ \
-    && rm -rf mysql-connector-java-8.0.33*
+RUN wget https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar -O ${HIVE_HOME}/lib/mysql-connector-j-8.0.33.jar
 
 # Copy configuration files
 COPY config/hive-site.xml ${HIVE_HOME}/conf/

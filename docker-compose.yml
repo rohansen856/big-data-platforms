@@ -335,7 +335,7 @@ services:
     container_name: hadoop-namenode
     ports:
       - "9870:9870"
-      - "9000:9000"
+      - "9001:9000"
     environment:
       - CLUSTER_NAME=hadoop-cluster
     volumes:
