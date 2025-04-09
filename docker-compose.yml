@@ -191,9 +191,248 @@ services:
     networks:
       - big-data-network
 
+  # Apache Beam Services (optional - can be started separately)
+  beam-batch:
+    build:
+      context: ./beam
+      dockerfile: Dockerfile
+    container_name: beam-batch-processor
+    volumes:
+      - ./beam/app:/app
+      - ./shared-data:/shared-data
+    environment:
+      - BEAM_RUNNER=DirectRunner
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    command: python simple_batch.py
+    depends_on:
+      - kafka
+      - spark-master
+    networks:
+      - big-data-network
+
+  beam-streaming:
+    build:
+      context: ./beam
+      dockerfile: Dockerfile
+    container_name: beam-streaming-processor
+    volumes:
+      - ./beam/app:/app
+      - ./shared-data:/shared-data
+    environment:
+      - BEAM_RUNNER=DirectRunner
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    command: python simple_batch.py
+    depends_on:
+      - kafka
+    networks:
+      - big-data-network
+  
+  # Apache Pig Services
+  pig-processor:
+    build:
+      context: ./pig
+      dockerfile: Dockerfile
+    container_name: pig-processor
+    volumes:
+      - ./pig/scripts:/app/scripts
+      - ./shared-data:/shared-data
+    environment:
+      - PIG_EXECUTION_MODE=local
+    command: pig -x local /app/scripts/sample_analysis.pig
+    networks:
+      - big-data-network
+
+  # Apache Flink Services
+  flink-jobmanager:
+    build:
+      context: ./flink
+      dockerfile: Dockerfile
+    container_name: flink-jobmanager
+    ports:
+      - "8085:8081"
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    volumes:
+      - ./flink/checkpoints:/opt/flink/checkpoints
+      - ./shared-data:/shared-data
+    command: jobmanager
+    networks:
+      - big-data-network
+
+  flink-taskmanager:
+    build:
+      context: ./flink
+      dockerfile: Dockerfile
+    container_name: flink-taskmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    volumes:
+      - ./flink/checkpoints:/opt/flink/checkpoints
+      - ./shared-data:/shared-data
+    command: taskmanager
+    depends_on:
+      - flink-jobmanager
+    networks:
+      - big-data-network
+
+  # Apache Storm Services
+  storm-nimbus:
+    build:
+      context: ./storm
+      dockerfile: Dockerfile
+    container_name: storm-nimbus
+    ports:
+      - "8086:8080"
+    environment:
+      - STORM_ZOOKEEPER_SERVERS=zookeeper:2181
+    volumes:
+      - ./storm/data:/opt/storm/data
+      - ./shared-data:/shared-data
+    command: storm nimbus
+    depends_on:
+      - zookeeper
+    networks:
+      - big-data-network
+
+  storm-supervisor:
+    build:
+      context: ./storm
+      dockerfile: Dockerfile
+    container_name: storm-supervisor
+    environment:
+      - STORM_ZOOKEEPER_SERVERS=zookeeper:2181
+    volumes:
+      - ./storm/data:/opt/storm/data
+      - ./shared-data:/shared-data
+    command: storm supervisor
+    depends_on:
+      - storm-nimbus
+    networks:
+      - big-data-network
+
+  storm-ui:
+    build:
+      context: ./storm
+      dockerfile: Dockerfile
+    container_name: storm-ui
+    ports:
+      - "8087:8080"
+    environment:
+      - STORM_ZOOKEEPER_SERVERS=zookeeper:2181
+    command: storm ui
+    depends_on:
+      - storm-nimbus
+    networks:
+      - big-data-network
+
+  # Hadoop Services
+  hadoop-namenode:
+    build:
+      context: ./hadoop
+      dockerfile: Dockerfile
+    container_name: hadoop-namenode
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+    volumes:
+      - hadoop-namenode:/opt/hadoop/data/namenode
+      - ./shared-data:/shared-data
+    command: hdfs namenode
+    networks:
+      - big-data-network
+
+  hadoop-datanode:
+    build:
+      context: ./hadoop
+      dockerfile: Dockerfile
+    container_name: hadoop-datanode
+    ports:
+      - "9864:9864"
+    volumes:
+      - hadoop-datanode:/opt/hadoop/data/datanode
+      - ./shared-data:/shared-data
+    command: hdfs datanode
+    depends_on:
+      - hadoop-namenode
+    networks:
+      - big-data-network
+
+  hadoop-resourcemanager:
+    build:
+      context: ./hadoop
+      dockerfile: Dockerfile
+    container_name: hadoop-resourcemanager
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./shared-data:/shared-data
+    command: yarn resourcemanager
+    depends_on:
+      - hadoop-namenode
+    networks:
+      - big-data-network
+
+  hadoop-nodemanager:
+    build:
+      context: ./hadoop
+      dockerfile: Dockerfile
+    container_name: hadoop-nodemanager
+    ports:
+      - "8042:8042"
+    volumes:
+      - ./shared-data:/shared-data
+    command: yarn nodemanager
+    depends_on:
+      - hadoop-resourcemanager
+    networks:
+      - big-data-network
+
+  # Apache Hive Services
+  hive-metastore:
+    build:
+      context: ./hive
+      dockerfile: Dockerfile
+    container_name: hive-metastore
+    ports:
+      - "9083:9083"
+    volumes:
+      - hive-metastore:/tmp/hive/metastore_db
+      - hive-warehouse:/tmp/hive/warehouse
+      - ./shared-data:/shared-data
+    command: hive --service metastore
+    depends_on:
+      - hadoop-namenode
+    networks:
+      - big-data-network
+
+  hive-server2:
+    build:
+      context: ./hive
+      dockerfile: Dockerfile
+    container_name: hive-server2
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    volumes:
+      - hive-warehouse:/tmp/hive/warehouse
+      - ./shared-data:/shared-data
+    command: hive --service hiveserver2
+    depends_on:
+      - hive-metastore
+    networks:
+      - big-data-network
+
 volumes:
   airflow-postgres-data:
   clickhouse-data:
+  hadoop-namenode:
+  hadoop-datanode:
+  hive-metastore:
+  hive-warehouse:
 
 networks:
   big-data-network:

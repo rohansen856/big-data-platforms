@@ -1,0 +1,32 @@
+# Core Python packages (Python 3.12 compatible versions)
+numpy
+pandas
+requests
+faker
+
+# Spark (Python 3.12 compatible)
+pyspark
+
+# Kafka
+kafka-python
+confluent-kafka
+
+# Airflow (Python 3.12 support)
+apache-airflow
+apache-airflow-providers-postgres
+
+# ClickHouse
+clickhouse-driver
+
+# Cassandra
+cassandra-driver
+
+# Data processing (Python 3.12 compatible)
+scikit-learn
+matplotlib
+seaborn
+
+# Utilities
+python-dotenv
+sqlalchemy
+psycopg2-binary

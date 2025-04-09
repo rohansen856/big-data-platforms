@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  hive-metastore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hive-metastore
+    ports:
+      - "9083:9083"
+    env_file:
+      - .env
+    volumes:
+      - hive-metastore:/tmp/hive/metastore_db
+      - hive-warehouse:/tmp/hive/warehouse
+      - ../shared-data:/shared-data
+    command: hive --service metastore
+    networks:
+      - hive-network
+
+  hive-server2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hive-server2
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    env_file:
+      - .env
+    volumes:
+      - hive-warehouse:/tmp/hive/warehouse
+      - ../shared-data:/shared-data
+    command: hive --service hiveserver2
+    depends_on:
+      - hive-metastore
+    networks:
+      - hive-network
+
+  hive-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hive-client
+    env_file:
+      - .env
+    volumes:
+      - hive-warehouse:/tmp/hive/warehouse
+      - ../shared-data:/shared-data
+      - ./queries:/opt/hive/queries
+    command: hive
+    depends_on:
+      - hive-server2
+    stdin_open: true
+    tty: true
+    networks:
+      - hive-network
+
+volumes:
+  hive-metastore:
+  hive-warehouse:
+
+networks:
+  hive-network:
+    driver: bridge

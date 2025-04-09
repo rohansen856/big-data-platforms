@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  pig-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pig-processor
+    volumes:
+      - ./scripts:/app/scripts
+      - ./data:/app/data
+      - ./output:/app/output
+      - ../shared-data:/shared-data
+    env_file:
+      - .env
+    command: pig -x local /app/scripts/sample_analysis.pig
+    networks:
+      - pig-network
+
+  data-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pig-data-generator
+    volumes:
+      - ./scripts:/app/scripts
+      - ../shared-data:/shared-data
+    env_file:
+      - .env
+    command: python3 /app/scripts/data_generator.py
+    networks:
+      - pig-network
+
+  pig-grunt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pig-grunt-shell
+    volumes:
+      - ./scripts:/app/scripts
+      - ./data:/app/data
+      - ./output:/app/output
+      - ../shared-data:/shared-data
+    env_file:
+      - .env
+    command: pig -x local
+    stdin_open: true
+    tty: true
+    networks:
+      - pig-network
+
+networks:
+  pig-network:
+    driver: bridge
