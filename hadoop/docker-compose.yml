@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  namenode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hadoop-namenode
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    env_file:
+      - .env
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+    volumes:
+      - hadoop-namenode:/opt/hadoop/data/namenode
+      - hadoop-logs:/opt/hadoop/logs
+      - ../shared-data:/shared-data
+    command: hdfs namenode
+    networks:
+      - hadoop-network
+
+  datanode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hadoop-datanode
+    ports:
+      - "9864:9864"
+    env_file:
+      - .env
+    volumes:
+      - hadoop-datanode:/opt/hadoop/data/datanode
+      - hadoop-logs:/opt/hadoop/logs
+      - ../shared-data:/shared-data
+    command: hdfs datanode
+    depends_on:
+      - namenode
+    networks:
+      - hadoop-network
+
+  resourcemanager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hadoop-resourcemanager
+    ports:
+      - "8088:8088"
+    env_file:
+      - .env
+    volumes:
+      - hadoop-logs:/opt/hadoop/logs
+      - ../shared-data:/shared-data
+    command: yarn resourcemanager
+    depends_on:
+      - namenode
+      - datanode
+    networks:
+      - hadoop-network
+
+  nodemanager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hadoop-nodemanager
+    ports:
+      - "8042:8042"
+    env_file:
+      - .env
+    volumes:
+      - hadoop-logs:/opt/hadoop/logs
+      - ../shared-data:/shared-data
+    command: yarn nodemanager
+    depends_on:
+      - resourcemanager
+    networks:
+      - hadoop-network
+
+  historyserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hadoop-historyserver
+    ports:
+      - "19888:19888"
+    env_file:
+      - .env
+    volumes:
+      - hadoop-logs:/opt/hadoop/logs
+      - ../shared-data:/shared-data
+    command: mapred historyserver
+    depends_on:
+      - namenode
+      - datanode
+    networks:
+      - hadoop-network
+
+volumes:
+  hadoop-namenode:
+  hadoop-datanode:
+  hadoop-logs:
+
+networks:
+  hadoop-network:
+    driver: bridge
