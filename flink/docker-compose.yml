@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  flink-jobmanager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flink-jobmanager
+    ports:
+      - "8085:8081"
+    env_file:
+      - .env
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+    volumes:
+      - ./checkpoints:/opt/flink/checkpoints
+      - ./savepoints:/opt/flink/savepoints
+      - ../shared-data:/shared-data
+    command: jobmanager
+    networks:
+      - flink-network
+
+  flink-taskmanager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flink-taskmanager
+    env_file:
+      - .env
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+    volumes:
+      - ./checkpoints:/opt/flink/checkpoints
+      - ./savepoints:/opt/flink/savepoints
+      - ../shared-data:/shared-data
+    command: taskmanager
+    depends_on:
+      - flink-jobmanager
+    networks:
+      - flink-network
+
+  flink-sql-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flink-sql-client
+    env_file:
+      - .env
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+    volumes:
+      - ./checkpoints:/opt/flink/checkpoints
+      - ./savepoints:/opt/flink/savepoints
+      - ../shared-data:/shared-data
+    command: sql-client
+    depends_on:
+      - flink-jobmanager
+    stdin_open: true
+    tty: true
+    networks:
+      - flink-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: flink-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9094:9092"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    networks:
+      - flink-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: flink-zookeeper
+    ports:
+      - "2183:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - flink-network
+
+networks:
+  flink-network:
+    driver: bridge

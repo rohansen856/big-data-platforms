@@ -1,0 +1,6 @@
+apache-beam
+kafka-python
+pandas
+numpy
+faker
+requests
